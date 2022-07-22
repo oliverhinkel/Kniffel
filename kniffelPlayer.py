@@ -3,14 +3,19 @@ import easygui as g
 
 class Player:
     def __init__(self, pName):
-        self.oberePunkte = [[[], [], [], [], [], []], [[], [], [], [], [], []]]
-        self.unterePunkte = [[[], [], [], [], [], [], []], [[], [], [], [], [], [], []]]
+        self.oberePunkte = [[0], [0], [0], [0], [0], [0]]
+        self.unterePunkte = [[0], [0], [0], [0], [0], [0], [0]]
+        # Classes erste innere Liste ist Obere Punkte und die andere untere Punkte
+        self.classesUsed = [[[0], [0], [0], [0], [0], [0]], [[0], [0], [0], [0], [0], [0], [0]]]
         self.bonusPunkte = False
         self.spielerName = pName
         self.gesamtPunkte = 0
-        
+
     def sayName(self):
         return self.spielerName
+
+    def checkPossibleMove(self, inpDic):
+        pass
 
     # Obere Punkte hinzufügen
     def addOP(self, points, reihe):
@@ -32,26 +37,26 @@ class Player:
         return currPoints
 
     # Spezial Würfel berechnen
-    def add3Pasch(self, points, specialNr):
+    def add3Pasch(self, points):
         sumP = sum(points)
-        self.unterePunkte[0][specialNr].append(sumP)
+        self.unterePunkte[0].append(sumP)
 
-    def add4Pasch(self, points, specialNr):
+    def add4Pasch(self, points):
         sumP = sum(points)
-        self.unterePunkte[1][specialNr].append(sumP)
+        self.unterePunkte[1].append(sumP)
 
-    def addFullH(self, specialNr):
-        self.unterePunkte[2][specialNr].append(25)
+    def addFullH(self):
+        self.unterePunkte[2].append(25)
 
-    def addKlStr(self, specialNr):
-        self.unterePunkte[3][specialNr].append(30)
+    def addKlStr(self):
+        self.unterePunkte[3].append(30)
 
-    def addGrStr(self, specialNr):
-        self.unterePunkte[4][specialNr].append(40)
+    def addGrStr(self):
+        self.unterePunkte[4].append(40)
 
-    def addKNIFFEL(self, specialNr):
-        self.unterePunkte[5][specialNr].append(50)
+    def addKNIFFEL(self):
+        self.unterePunkte[5].append(50)
 
-    def addChance(self, points, specialNr):
+    def addChance(self, points):
         sumP = sum(points)
-        self.unterePunkte[6][specialNr].append(sumP)
+        self.unterePunkte[6].append(sumP)
