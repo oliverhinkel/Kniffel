@@ -2,10 +2,11 @@ import random
 import easygui as g
 import os
 from kniffelPlayer import Player
+from time import sleep
+import sys
 
 dirname = os.path.dirname(__file__)
 helpDir = os.path.join(dirname, "extras/kniffelHelp.txt")
-
 
 class Game(Player):
     def __init__(self, impPlayers, playerCount):
@@ -124,7 +125,7 @@ class Game(Player):
                 while True:
                     behalten = g.multchoicebox(  # Auswahlbox bei Runde 1 und 2
                         msg=f"Deine Würfel: {self.zahlenStr(zahlen)}\nWelche Würfel sollen behaltet werden? ",
-                        title="--Würfelauswahl Menü--",
+                        title=f"--Würfelauswahl Menü: {pName}--",
                         choices=zahlen,
                         preselect=None,
                     )
@@ -168,7 +169,7 @@ class Game(Player):
             if spielzugEnde:
                 spielzugZahlen = zahlen[:]
                 g.msgbox(
-                    f"Das Endergebnis dieses Spielzugs ist: {self.zahlenStr(spielzugZahlen)}\nSpielzug von {pName} beendet"
+                    f"Die Würfelzahlen dieses Spielzugs ist: {self.zahlenStr(spielzugZahlen)}"
                 )
                 print("Die endgültigen Zahlen:", self.zahlenStr(zahlen))
                 break
@@ -339,12 +340,14 @@ class Game(Player):
 
         return wuerfel, classDict
 
-    def auswahl(self, playerIn, inpZahlen, inpDict):
-        """_summary_
+    def auswahl(self, playerInp, zahlenInp, inpDict):
+        """Beschreibung:\n
+        In dieser Methode wird die Auswahl des Spielers gesteuert und seine
+        Auswahl wird in sein Logbuch eingetragen.
 
         Args:
-            playerIn (Obj): Der Spieler wird als Object übergeben\n
-            inpZahlen (_type_): Die Würfelzahlen aus dem Spielzug\n
+            playerInp (Obj): Der Spieler wird als Object übergeben\n
+            zahlenInp (_type_): Die Würfelzahlen aus dem Spielzug\n
             inpDict (_type_): Das Dictionary mit den Möglichkeiten
             der Würfelzahlen aus der 'wuerfelArt' Methode
 
@@ -354,9 +357,9 @@ class Game(Player):
             das sind die normalen Ergebnise und Ergebnis[1], die Ergebnisse
             falls ein Spieler ein zweites/n-tes Mal ein Kniffel würfelt
         """
-        wuerfel = inpZahlen
+        wuerfel = zahlenInp
         classDict = inpDict
-        player = playerIn
+        player = playerInp
 
         # ---------- Variablen für Auswahl ----------
         # Classes Used aus Player Klasse
@@ -380,9 +383,13 @@ class Game(Player):
         # Augenzahlen in Auswahl stecken
         for i in range(0, 6):
             alleAugenDK.append(f"Doppelkniffel für Augenzahl: {i+1}")
-
-            if player.classesUsed[0][i] == [0]:
-                auswahlAugen.append(i + 1)
+            for j in range(0, len(wuerfel)):
+                if (
+                    player.classesUsed[0][i] == [0]
+                    and wuerfel[j] == (i + 1)
+                    and wuerfel[j] not in auswahlAugen
+                ):
+                    auswahlAugen.append(i + 1)
 
             # Doppelkniffel
             if player.classesUsed[0][i] == [0] and istDoppelkniffel:
@@ -416,7 +423,7 @@ class Game(Player):
 
         while True:
             antwort = g.choicebox(
-                msg="Treffe deine Entscheidung für diesen Spielzug",
+                msg=f"Treffe deine Entscheidung für diesen Spielzug\n Deine Würfelzahlen sind: {self.zahlenStr(wuerfel)}",
                 choices=gesamtauswahl,
                 title="Auswahl",
                 preselect=0,
@@ -439,7 +446,7 @@ class Game(Player):
         for i in range(0, 6):
             if antwort == str(i + 1):
                 antwortIndexAugen = i
-                print("Augenzahl ausgewählt")
+                print(f"Augenzahl {i+1} ausgewählt")
 
         # Indexsuche von Spezialwürfen als Antwort
         if antwortIndexAugen == None:
@@ -473,14 +480,41 @@ class Game(Player):
                     antwortIndexNoDK[i] = 1
                     player.classesUsed[0][i][0] = 1
 
-            elif i < 14:
+            elif i < 13:
                 if i == antwortIndexSpecials:
                     antwortIndexNoDK[i] = 1
                     player.classesUsed[1][i - 6][0] = 1
 
+        # print(ergebnis) # ---- INFO PRINT
+        # print(player.classesUsed)
         ergebnis = [antwortIndexNoDK, doppelkniffel]
 
         return wuerfel, ergebnis
+
+    def berechnePunkte(self, playerInp, zahlenInp, auswahlInp):
+        wuerfel = zahlenInp
+        auswahlNormal = auswahlInp[0]
+        auswahlDK = auswahlInp[1]
+
+    def spielzugEnde(self, currSpieler, nextSpieler):
+        player = currSpieler
+        nPlayer = nextSpieler
+        while True:
+            ausgabe = g.ccbox(
+                msg=f"Spielzug von {player.spielerName} beendet\nAls nächstes ist {nPlayer.spielerName} dran!",
+                title="Spielzug Ende",
+                choices=["Weiterspielen", "Spiel beenden"],
+            )
+            if ausgabe:
+                print(f"Nächste Runde startet, {nPlayer.spielerName} mach dich bereit!")
+                sleep(1)
+                break
+            else:
+                print(f"{player.spielerName} möchte das Spiel vorzeitig beenden..")
+                endgame = g.ccbox(msg="Wirklich beenden?", choices=["Ja", "Nein"])
+                if endgame:
+                    print("Das Spiel wird beendet :(")
+                    sys.exit()
 
     def run(self):
         """
@@ -490,16 +524,31 @@ class Game(Player):
         self.running = True
 
         while self.running:  # Schleife die Spiel bis Ende laufen lässt
-            for i in range(0, 1):  # Die Maximal 13 möglichen Spielzüge
+            for j in range(0, 2):  # Die Maximal 13 möglichen Spielzüge
+                g.msgbox(
+                    msg=f"RUNDE {j+1}",
+                    title="MITTEILUNG",
+                    ok_button=f"Starte Runde {j+1}",
+                )
+
                 for i in range(0, self.pCount):  # Ein Spielzug für alle Spieler
+
                     # Spielzug für Spieler i durchführen und seine Würfelzahlen speichern
                     endzahlen = self.spielzug(self.players[i].spielerName)
+
                     # Würfelzahlen + mögliche Würfelarten abspeichern
                     waWuerfel, waDict = self.wuerfelArt(zahlenInp=endzahlen)
-                    # Auswahl des Spielers starten
-                    auswahlSpieler = self.auswahl(self.players[i], waWuerfel, waDict)
-                    print(auswahlSpieler)
-                    print(self.players[i].classesUsed)
-                self.running = False
-            pass
 
+                    # Auswahl des Spielers starten
+                    awWuerfel, awErgebnis = self.auswahl(
+                        self.players[i], waWuerfel, waDict
+                    )
+                    # Spielzug Ende
+                    self.spielzugEnde(
+                        self.players[i],
+                        self.players[i + 1]
+                        if i < (self.pCount - 1) and self.pCount > 1
+                        else self.players[0],
+                    )
+
+            self.running = False

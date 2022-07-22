@@ -13,6 +13,7 @@ class Player:
         self.bonusPunkte = False
         self.spielerName = pName
         self.gesamtPunkte = 0
+        self.helper=[1,1]
 
     # Obere Punkte hinzufügen
     def addOP(self, points, reihe):
