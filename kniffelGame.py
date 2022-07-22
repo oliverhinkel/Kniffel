@@ -5,8 +5,9 @@ from kniffelPlayer import Player
 from time import sleep
 import sys
 
-dirname = os.path.dirname(__file__)
+dirname = os.path.abspath("")
 helpDir = os.path.join(dirname, "extras/kniffelHelp.txt")
+
 
 class Game(Player):
     def __init__(self, impPlayers, playerCount):
@@ -77,10 +78,10 @@ class Game(Player):
         else:
             pass
 
-    def spielzug(self, pName):
+    def wuerfelZug(self, pName):
 
         """Beschreibung:\n
-        Der Spielzug eines Spielers, indem die Würfel gewürfelt werden und die Auswahl der Würfel
+        Der Würfelzug eines Spielers, in dem die Würfel gewürfelt werden und die Auswahl der Würfel (nicht Punktzahl)
         stattfindet
             
         Returns:
@@ -168,12 +169,13 @@ class Game(Player):
             # Spielende Box
             if spielzugEnde:
                 spielzugZahlen = zahlen[:]
-                g.msgbox(
-                    f"Die Würfelzahlen dieses Spielzugs ist: {self.zahlenStr(spielzugZahlen)}"
-                )
                 print("Die endgültigen Zahlen:", self.zahlenStr(zahlen))
+                g.msgbox(
+                    f"Die Würfelzahlen dieses Spielzugs sind: {self.zahlenStr(spielzugZahlen)}"
+                )
                 break
 
+        print("\n--------| WÜRFELN BEENDET |--------\n")
         return spielzugZahlen
 
     def wuerfelArt(self, zahlenInp):
@@ -185,7 +187,6 @@ class Game(Player):
             zahlenInp (List of Ints): Die Würfelzahlen aus dem Spielzug
 
         Returns:
-            Würfel(List of Ints): Die Würfel aus dem Spielzug;\n
             ClassDict(Dict): Ein Dictionary das die Möglichkeiten des Spielzugs abgespeichert hat,
             ohne dabei zu beachten, was der Spieler bereits ausgefüllt hat
         """
@@ -202,8 +203,7 @@ class Game(Player):
             "ST",  # Streichen
         )
         classDict = dict(zip(classesWuerfelArt, classCheck))
-        wuerfel = zahlenInp
-        wuerfel.sort()
+        wuerfel = sorted(zahlenInp)
         paare = []
         for l in range(1, 7):
 
@@ -338,7 +338,7 @@ class Game(Player):
         ):
             classDict["C"] = 1
 
-        return wuerfel, classDict
+        return classDict
 
     def auswahl(self, playerInp, zahlenInp, inpDict):
         """Beschreibung:\n
@@ -357,10 +357,10 @@ class Game(Player):
             das sind die normalen Ergebnise und Ergebnis[1], die Ergebnisse
             falls ein Spieler ein zweites/n-tes Mal ein Kniffel würfelt
         """
-        wuerfel = zahlenInp
+        wuerfel = sorted(zahlenInp)
         classDict = inpDict
         player = playerInp
-
+        print(f"{player.spielerName} wählt Punktzahl aus..")
         # ---------- Variablen für Auswahl ----------
         # Classes Used aus Player Klasse
 
@@ -452,7 +452,7 @@ class Game(Player):
         if antwortIndexAugen == None:
             for i in range(0, len(self.classes)):
 
-                if self.classes[i] == antwort:
+                if self.classes[i] == antwort and antwort != "Streichen":
                     antwortIndexSpecials = i + 6
                     print(f"{self.classes[i]} ausgewählt")
 
@@ -489,36 +489,162 @@ class Game(Player):
         # print(player.classesUsed)
         ergebnis = [antwortIndexNoDK, doppelkniffel]
 
-        return wuerfel, ergebnis
+        return ergebnis
 
     def berechnePunkte(self, playerInp, zahlenInp, auswahlInp):
-        wuerfel = zahlenInp
-        auswahlNormal = auswahlInp[0]
+        """Beschreibung:\n
+        Diese Methode berechnet die Punktzahl und achtet dabei auf verschiedene
+        Dinge wie z.B. ob doppelter/n-ter Kniffel gewürfelt wurde oder ob
+        der Spieler etwas streicht (dann wird die Streichmethode gerufen)
+
+        Args:
+            playerInp (Object Instance): der aktuelle Spieler
+            zahlenInp (List of ints): die gewürfelten Zahlen
+            auswahlInp (List of 2 Lists of ints): Liste mit Liste[0]=normale Auswahl, Liste[1]=doppelter/n-ter Kniffel
+        """
+        print("\n-------- ERGEBNIS --------")
+        wuerfel = zahlenInp  # Ersetzen mit zahlenInp
+        player = playerInp  # Ersetzen mit playerInp
+        punktzahl = 0
+
+        # Variablen nach Auswahl normaler Optionen und doppel Kniffel entpacken
+        auswahlN = auswahlInp[0]
         auswahlDK = auswahlInp[1]
+
+        # Normale Auswahl in Augenzahl und Spezialwurf Auswahl teilen
+        auswahlA = auswahlN[:6]
+        auswahlSpe = auswahlN[6:-1]
+
+        # DK Auswahl in Augenzahl und Spezialwurf Auswahl teilen
+        auswahlDKA = auswahlDK[:6]
+        auswahlDKSPE = auswahlDK[6:]
+        dkAugenzahlWahl = True if sum(auswahlDKA) > 0 else False
+        dkSpezialWahl = True if sum(auswahlDKSPE) > 0 else False
+
+        # Prüfen nach Art der Auswahl
+        # Normal heißt, ohne doppelten/n-fachen Kniffel
+        normaleAuswahl = True if sum(auswahlN[:-1]) > 0 else False
+        # True wenn Augenzahl gewählt wurde
+        augenzahlWahl = True if sum(auswahlA) > 0 else False
+        # True wenn Spezialwurf gewählt wurde
+        spezialWahl = True if sum(auswahlSpe) > 0 else False
+        # Auswahl auf Streichen prüfen
+        streichWahl = True if auswahlN[-1] == 1 else False
+
+        if normaleAuswahl and (augenzahlWahl or spezialWahl):
+            # Berechnungen mit Augenzahlwahl
+            if augenzahlWahl:
+
+                for i in range(0, 6):
+
+                    if auswahlA[i] > 0:
+                        # Augenzahl Häufigkeit in Würfelzahlen zählen
+                        punktzahl = (wuerfel.count(i + 1)) * (i + 1)
+                        # Spieler die Punktzahl gutschreiben
+                        player.addOP(punktzahl, i)
+            else:
+
+                for i in range(0, len(auswahlSpe)):
+
+                    if auswahlSpe[i] > 0:
+
+                        if i in [
+                            0,
+                            1,
+                            6,
+                        ]:  # 3er, 4er Pasch und Chance einfache Punktzahl
+                            punktzahl = sum(wuerfel)
+                            player.addUP(i, punktzahl)
+                        else:
+                            if i == 2:
+                                punktzahl = player.addFullH()
+                            if i == 3:
+                                punktzahl = player.addKlStr()
+                            if i == 4:
+                                punktzahl = player.addGrStr()
+                            if i == 5:
+                                punktzahl = player.addKNIFFEL()
+
+        elif streichWahl:
+            print("Es wird ein Feld gestrichen")
+            # Streichwahl Methode aufrufen
+
+        else:
+            # Berechnungen für DoppelKniffel
+            if dkAugenzahlWahl:
+
+                for i in range(0, 6):
+
+                    if auswahlDKA[i] > 0:
+                        # Augenzahl Häufigkeit in Würfelzahlen zählen
+                        punktzahl = wuerfel[i] * 5
+                        # Spieler die Punktzahl gutschreiben
+                        player.addOP(punktzahl, i)
+                        player.classesUsed[0][i] = 1
+            elif dkSpezialWahl:
+                for i in range(0, len(auswahlDKSPE)):
+
+                    if auswahlDKSPE[i] > 0:
+
+                        if i in [
+                            0,
+                            1,
+                            5,
+                        ]:  # 3er, 4er Pasch und Chance einfache Punktzahl
+                            punktzahl = 6 * 5
+                            if i != 5:
+                                player.classesUsed[1][i] = 1
+                            else:
+                                player.classesUsed[1][i + 1] = 1
+                            player.addUP(i, punktzahl)
+                        else:
+                            if i == 2:
+                                punktzahl = player.addFullH()
+                            if i == 3:
+                                punktzahl = player.addKlStr()
+                            if i == 4:
+                                punktzahl = player.addGrStr()
+
+        # Runden Ergebnis
+        print(f"Diese Runde hat {player.spielerName} {punktzahl} Punkte gebracht!")
+        player.gesamtPunkte = player.getPoints()
+        print("Gesamtpuntzahl:", player.gesamtPunkte)
+
+        g.msgbox(
+            msg=f"Diese Runde hat {player.spielerName} {punktzahl} Punkte gebracht!\nAktuelle Gesamtpuntzahl: {player.gesamtPunkte}",
+            title=f"Punktzahl {player.spielerName}: {player.gesamtPunkte}",
+            ok_button="Weiter",
+        )
 
     def spielzugEnde(self, currSpieler, nextSpieler):
         player = currSpieler
         nPlayer = nextSpieler
+        print(f"*****|Spielzug von {player.spielerName} beendet|*****".upper())
         while True:
             ausgabe = g.ccbox(
                 msg=f"Spielzug von {player.spielerName} beendet\nAls nächstes ist {nPlayer.spielerName} dran!",
-                title="Spielzug Ende",
+                title="Ende des Spielzugs",
                 choices=["Weiterspielen", "Spiel beenden"],
             )
             if ausgabe:
                 print(f"Nächste Runde startet, {nPlayer.spielerName} mach dich bereit!")
-                sleep(1)
                 break
             else:
                 print(f"{player.spielerName} möchte das Spiel vorzeitig beenden..")
                 endgame = g.ccbox(msg="Wirklich beenden?", choices=["Ja", "Nein"])
                 if endgame:
                     print("Das Spiel wird beendet :(")
+                    print(
+                        "\n##########################################################"
+                    )
                     sys.exit()
+        print("********************************************************")
+        print("********************************************************")
 
     def run(self):
         """
-        Methode, die das Spiel startet/verwaltet
+        Methode, die das Spiel startet/verwaltet.
+        Kontrolliert die Ein- und Ausgabeparameter der anderen Methoden.
         """
         print("----| Spiel wird gestartet |----")
         self.running = True
@@ -534,16 +660,18 @@ class Game(Player):
                 for i in range(0, self.pCount):  # Ein Spielzug für alle Spieler
 
                     # Spielzug für Spieler i durchführen und seine Würfelzahlen speichern
-                    endzahlen = self.spielzug(self.players[i].spielerName)
+                    wuerfelZahlen = self.wuerfelZug(self.players[i].spielerName)
 
                     # Würfelzahlen + mögliche Würfelarten abspeichern
-                    waWuerfel, waDict = self.wuerfelArt(zahlenInp=endzahlen)
+                    waDict = self.wuerfelArt(zahlenInp=wuerfelZahlen)
 
                     # Auswahl des Spielers starten
-                    awWuerfel, awErgebnis = self.auswahl(
-                        self.players[i], waWuerfel, waDict
-                    )
-                    # Spielzug Ende
+                    awErgebnis = self.auswahl(self.players[i], wuerfelZahlen, waDict)
+
+                    # Punktzahl ausrechnen
+                    self.berechnePunkte(self.players[i], wuerfelZahlen, awErgebnis)
+
+                    # Spielzug Ende (optimalerweise letzter Befehl)
                     self.spielzugEnde(
                         self.players[i],
                         self.players[i + 1]
