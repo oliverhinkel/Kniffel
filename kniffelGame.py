@@ -13,7 +13,6 @@ class Game(Player):
         self.players = impPlayers
         self.pCount = playerCount
         self.classes = (
-            "Augenzahl",
             "3er Pasch",
             "4er Pasch",
             "Full House",
@@ -79,8 +78,12 @@ class Game(Player):
 
     def spielzug(self, pName):
 
-        """
-        Die wichtigste Methode, hier wird jeder Spielzug durchgeführt
+        """Beschreibung:\n
+        Der Spielzug eines Spielers, indem die Würfel gewürfelt werden und die Auswahl der Würfel
+        stattfindet
+            
+        Returns:
+            spielzugZahlen(List of Ints): Die Würfelzahlen, die der Spieler hier ausgewählt hat
         """
         spielzugEnde = False
         spielzugZahlen = []
@@ -173,8 +176,20 @@ class Game(Player):
         return spielzugZahlen
 
     def wuerfelArt(self, zahlenInp):
+        """Beschreibung:
+        \nBerechnet die Möglichkeiten die die Würfelzahlen anbieten
+        ohne zu beachten, was der Spieler bereits ausgefüllt hat.
+
+        Args:
+            zahlenInp (List of Ints): Die Würfelzahlen aus dem Spielzug
+
+        Returns:
+            Würfel(List of Ints): Die Würfel aus dem Spielzug;\n
+            ClassDict(Dict): Ein Dictionary das die Möglichkeiten des Spielzugs abgespeichert hat,
+            ohne dabei zu beachten, was der Spieler bereits ausgefüllt hat
+        """
         classCheck = [0, 0, 0, 0, 0, 0, 0, 0]
-        classes = (
+        classesWuerfelArt = (
             "P",  # Augenzahl (hier als Paare um aus 3er Pasch und Paar ein Full House zu finden)
             "3P",  # 3er Pasch
             "4P",  # 4er Pasch
@@ -185,7 +200,7 @@ class Game(Player):
             "C",  # Chance
             "ST",  # Streichen
         )
-        classDict = dict(zip(classes, classCheck))
+        classDict = dict(zip(classesWuerfelArt, classCheck))
         wuerfel = zahlenInp
         wuerfel.sort()
         paare = []
@@ -322,23 +337,150 @@ class Game(Player):
         ):
             classDict["C"] = 1
 
-        classCheck[0] = paare
-        print(
-            f"3er Pasch mit Zahl: {classCheck[1]}\n" if classDict["3P"] == 1 else "\n",
-            f"4er Pasch mit Zahl: {classCheck[2]}\n" if classDict["4P"] == 1 else "\n",
-            f"Full House\n" if classDict["F"] == 1 else "\n",
-            f"Kleine Straße\n" if classDict["KS"] == 1 else "\n",
-            f"Große Straße\n" if classDict["GS"] == 1 else "\n",
-            f"KNIFFEL!!!" if classDict["K"] == 1 else "",
-            f"Chance" if classDict["C"] == 1 else "",
-        )
         return wuerfel, classDict
 
-    def auswahl(self, inpZahlen, inpDict):
+    def auswahl(self, playerIn, inpZahlen, inpDict):
+        """_summary_
+
+        Args:
+            playerIn (Obj): Der Spieler wird als Object übergeben\n
+            inpZahlen (_type_): Die Würfelzahlen aus dem Spielzug\n
+            inpDict (_type_): Das Dictionary mit den Möglichkeiten
+            der Würfelzahlen aus der 'wuerfelArt' Methode
+
+        Returns:
+            Wuerfel(List of Ints): Die Würfelzahlen aus dem Spielzug\n
+            Ergebnis(List of 2 Lists of Ints): Aufgeteilt in Ergebnis[0],
+            das sind die normalen Ergebnise und Ergebnis[1], die Ergebnisse
+            falls ein Spieler ein zweites/n-tes Mal ein Kniffel würfelt
+        """
         wuerfel = inpZahlen
         classDict = inpDict
+        player = playerIn
 
-        g.choicebox(msg="Treffe deine Entscheidung für diesen Spielzug")
+        # ---------- Variablen für Auswahl ----------
+        # Classes Used aus Player Klasse
+
+        antwortIndexNoDK = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        doppelkniffel = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        augenzahlen = [1, 2, 3, 4, 5, 6]  # Neu
+        auswahlAugen = []  # Neu
+        auswahlSpecials = []  # Neu
+        auswahlDoppelKniffel = []
+        classDictKeys = list(classDict)  # Keys von classDict als Liste
+        istDoppelkniffel = False
+        alleAugenDK = []
+        alleSpecialDK = []
+        alleDoppelkniffel = []
+
+        if player.classesUsed[1][5][0] >= 1:
+            istDoppelkniffel = True
+
+        # ---------- Auswahl vorbereiten ----------
+        # Augenzahlen in Auswahl stecken
+        for i in range(0, 6):
+            alleAugenDK.append(f"Doppelkniffel für Augenzahl: {i+1}")
+
+            if player.classesUsed[0][i] == [0]:
+                auswahlAugen.append(i + 1)
+
+            # Doppelkniffel
+            if player.classesUsed[0][i] == [0] and istDoppelkniffel:
+                auswahlDoppelKniffel.append(f"Doppelkniffel für Augenzahl: {i+1}")
+
+        # Specials in Auswahl stecken
+        for i in range(0, len(self.classes) - 1):
+            # Specials in alle möglichen Doppelkniffel hinzufügen
+            if i != 5:
+                alleSpecialDK.append(f"Doppelkniffel für Special: {self.classes[i]}")
+            if (
+                classDict[classDictKeys[i + 1]] == 1
+                and player.classesUsed[1][i][0] == 0
+            ):
+                auswahlSpecials.append(self.classes[i])
+            # Doppelkniffel in Auswahl
+            if player.classesUsed[1][i][0] == 0 and istDoppelkniffel and i != 5:
+                auswahlDoppelKniffel.append(
+                    f"Doppelkniffel für Special: {self.classes[i]}"
+                )
+
+        # Doppelkniffel zurücksetzen
+        if player.classesUsed[1][5][0] > 1:
+            player.classesUsed[1][5][0] = 1
+
+        # ---------- Auswahl ----------
+        # Gesamtauswahl
+        gesamtauswahl = (
+            auswahlAugen + auswahlSpecials + auswahlDoppelKniffel + ["Streichen"]
+        )
+
+        while True:
+            antwort = g.choicebox(
+                msg="Treffe deine Entscheidung für diesen Spielzug",
+                choices=gesamtauswahl,
+                title="Auswahl",
+                preselect=0,
+            )
+            if antwort == None:
+                print("Keine gültige Eingabe")
+                g.msgbox(
+                    msg="Keine gültige Eingabe", title="Fehler", ok_button="Nochmal"
+                )
+            else:
+                break
+
+        # ---------- Auswahl verarbeiten ----------
+        # Entweder Index des Spezialwurf nehmen oder Antwort ist Augenzahl oder Antwort ist Doppelkniffel
+        antwortIndexSpecials = None
+        antwortIndexAugen = None
+        antwortIndexKniffel = None
+
+        # Indexsuche von Augenzahl als Antwort
+        for i in range(0, 6):
+            if antwort == str(i + 1):
+                antwortIndexAugen = i
+                print("Augenzahl ausgewählt")
+
+        # Indexsuche von Spezialwürfen als Antwort
+        if antwortIndexAugen == None:
+            for i in range(0, len(self.classes)):
+
+                if self.classes[i] == antwort:
+                    antwortIndexSpecials = i + 6
+                    print(f"{self.classes[i]} ausgewählt")
+
+        # Indexsuche wenn Antwort ein Doppelkniffel ist
+        alleDoppelkniffel = alleAugenDK + alleSpecialDK
+        if antwortIndexAugen == None:
+
+            for i in range(0, len(alleDoppelkniffel)):
+
+                if antwort == alleDoppelkniffel[i]:
+                    doppelkniffel[i] = 1
+                    print("Doppelkniffel ausgewählt")
+
+        # Streichen als Antwort
+        if antwort == "Streichen":
+            antwortIndexNoDK[-1] = 1
+            print("Streichen ausgewählt")
+
+        # ---------- Ergebnis Liste erstellen ----------
+        for i in range(0, len(antwortIndexNoDK)):
+            # If checkt ob obere Punktzahl betroffen (1-6)
+            if i < 6:
+                # If checkt ob i == Auge
+                if i == antwortIndexAugen:
+                    antwortIndexNoDK[i] = 1
+                    player.classesUsed[0][i][0] = 1
+
+            elif i < 14:
+                if i == antwortIndexSpecials:
+                    antwortIndexNoDK[i] = 1
+                    player.classesUsed[1][i - 6][0] = 1
+
+        ergebnis = [antwortIndexNoDK, doppelkniffel]
+
+        return wuerfel, ergebnis
 
     def run(self):
         """
@@ -348,11 +490,16 @@ class Game(Player):
         self.running = True
 
         while self.running:  # Schleife die Spiel bis Ende laufen lässt
-            for i in range(0, 13):  # Die Maximal 13 möglichen Spielzüge
-                for i in range(0, self.pCount):
-                    endzahlen = self.spielzug(
-                        self.players[i], self.players[i].spielerName
-                    )
+            for i in range(0, 1):  # Die Maximal 13 möglichen Spielzüge
+                for i in range(0, self.pCount):  # Ein Spielzug für alle Spieler
+                    # Spielzug für Spieler i durchführen und seine Würfelzahlen speichern
+                    endzahlen = self.spielzug(self.players[i].spielerName)
+                    # Würfelzahlen + mögliche Würfelarten abspeichern
+                    waWuerfel, waDict = self.wuerfelArt(zahlenInp=endzahlen)
+                    # Auswahl des Spielers starten
+                    auswahlSpieler = self.auswahl(self.players[i], waWuerfel, waDict)
+                    print(auswahlSpieler)
+                    print(self.players[i].classesUsed)
                 self.running = False
             pass
 

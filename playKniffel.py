@@ -8,12 +8,12 @@ import easygui as g
 
 # Spielerinstanzen erstellen
 def initPlayers():
-    print("\nSpielfeld wird aufgebaut..",end='')
-    for i in range (0,10):
-        schlafzeit=rn.random()
-        print(".",end='')
+    print("\nSpielfeld wird aufgebaut..", end="")
+    for i in range(0, 10):
+        schlafzeit = rn.random()
+        print(".", end="")
         sleep(schlafzeit)
-        
+
     players = []
     pNames = []
     pCount = 0
@@ -24,7 +24,7 @@ def initPlayers():
         try:
             pCount = int(input("\nWie viele Spieler? "))
 
-            if confirm("Korrekte Antwort?") and pCount>0:
+            if confirm("Korrekte Antwort?") and pCount > 0:
                 break
             else:
                 print("Dann nochmal..\n")
