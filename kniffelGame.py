@@ -14,8 +14,8 @@ class Game(Player):
         self.pCount = playerCount
         self.classes = (
             "Augenzahl",
-            "3er Pasch (alle Augen zählen)",
-            "4er Pasch (alle Augen zählen)",
+            "3er Pasch",
+            "4er Pasch",
             "Full House",
             "Kleine Straße",
             "Große Straße",
