@@ -31,42 +31,9 @@ class Game(Player):
         return wuerfel[0]
 
     def wuerfelArt(self, zahlenInp):
-        classes = (
-            "A",  # Augenzahl
-            "3P",  # 3er Pasch
-            "4P",  # 4er Pasch
-            "F",  # Full House
-            "KS",  # Kleine Straße
-            "GS",  # Große Straße
-            "K",  # Kniffel
-            "C",  # Chance
-        )
-        classCheck = [0, 0, 0, 0, 0, 0, 0, 0]
-        classDict = dict(zip(classes, classCheck))
-        try:
-            w1, w2, w3, w4, w5, w5 = zahlenInp
-            zahlen = zahlenInp
-        except:
-            print("Fehler bei Zahlenspeicherung in Würfelart")
-            return None
+        wuerfel = zahlenInp
 
-        for l in range(1, 7):
-            for i in range(0, 5):  # 1. Stelle i
-                for j in range(0, 5):  # 2. Stelle j
-                    if j != i:
-                        for k in range(0, 5):  # 3. Stelle k
-                            if k != j and k != i:
-                                # 3er Pasch
-                                # if
-                                #   pass
-                                for m in range(0, 5):  # 4. Stelle m
-                                    if m != j and m != i and m != k:
-                                        for n in range(0, 5):  # 5. Stelle n
-                                            if n != j and n != i and n != k and n != m:
-                                                pass
-                                # Vergleiche
-
-        pass
+        # Hier Schleife für Erkennung einfügen -----------------------------------
 
     def zahlenStr(self, inp):
         # Würfelzahlen aus Array als String mit Leerzeichen zurückgeben
