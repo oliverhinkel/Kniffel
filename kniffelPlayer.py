@@ -13,16 +13,12 @@ class Player:
         self.bonusPunkte = False
         self.spielerName = pName
         self.gesamtPunkte = 0
-        self.helper=[1,1]
-
-    # Obere Punkte hinzufügen
-    def addOP(self, points, reihe):
-        self.oberePunkte[reihe] = points
-        self.classesUsed[0][reihe][0] = 1
+        self.helper = [1, 1] # helper[0]=Help Menü | helper[1]=Nachfragen
 
     def bpChecker(self):
         if sum(self.oberePunkte) >= 63:
             self.bonusPunkte = True
+
 
     def getPoints(self):
         op = sum(self.oberePunkte)
@@ -37,34 +33,29 @@ class Player:
 
         return currPoints
 
+    # Obere Punkte hinzufügen
+    def addOP(self, points, reihe):
+        self.oberePunkte[reihe] = points
+        self.classesUsed[0][reihe][0] = 1
+
     # Spezial Würfel berechnen
-    def add3Pasch(self, reihe, points):
-        sumP = sum(points)
-        self.unterePunkte[0].append(sumP)
-        self.classesUsed[1][reihe][0] = 1
 
-    def add4Pasch(self, reihe, points):
-        sumP = sum(points)
-        self.unterePunkte[1].append(sumP)
-        self.classesUsed[1][reihe][0] = 1
+    def addFullH(self):
+        self.unterePunkte[2] = 25
+        return 25
 
-    def addFullH(self, reihe):
-        self.unterePunkte[2].append(25)
-        self.classesUsed[1][reihe][0] = 1
+    def addKlStr(self):
+        self.unterePunkte[3] = 30
+        return 30
 
-    def addKlStr(self, reihe):
-        self.unterePunkte[3].append(30)
-        self.classesUsed[1][reihe][0] = 1
+    def addGrStr(self):
+        self.unterePunkte[4] = 40
+        return 40
 
-    def addGrStr(self, reihe):
-        self.unterePunkte[4].append(40)
-        self.classesUsed[1][reihe][0] = 1
+    def addKNIFFEL(self):
+        self.unterePunkte[5] = 50
+        return 50
 
-    def addKNIFFEL(self, reihe):
-        self.unterePunkte[5].append(50)
-        self.classesUsed[1][reihe][0] = 1
+    def addUP(self, i, points):
+        self.unterePunkte[i] = points
 
-    def addChance(self, reihe, points):
-        sumP = sum(points)
-        self.unterePunkte[6].append(sumP)
-        self.classesUsed[1][reihe][0] = 1
