@@ -58,7 +58,7 @@ class Game(Player):
             siegername: String\n
             siegerpunkte: Int
         """
-        maxPoints = 0
+        maxPoints = self.players[0].getPoints()
         maxPlayerName = ""
         mehrereWinner = []
         unentschieden = False
