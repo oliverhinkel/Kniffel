@@ -11,9 +11,17 @@ helpDir = os.path.join(dirname, "extras/kniffelHelp.txt")
 
 class Game(Player):
     def __init__(self, impPlayers, playerCount):
+        """Beschreibung:\n
+        Konstrukter der Game Klasse, erbt Player Klasse.
+
+        Args:
+            impPlayers (List of Obj): die Spieler Instanzen
+            playerCount (_type_): Spieleranzahl
+        """
         self.running = False
         self.players = impPlayers
         self.pCount = playerCount
+        self.spielRunden = 13  # Normalfall = 13 Runden, da jeden Spielzug eins von 13 Feldern ausgefüllt wird
         self.classes = (
             "3er Pasch",
             "4er Pasch",
@@ -38,6 +46,64 @@ class Game(Player):
             g.codebox("SPIELREGELN VON KNIFFEL", "Regelwerk", helpText)
         else:
             pass
+
+    def checkWinner(self):
+        """Beschreibung:\n
+        Prüft nach Gewinner und gibt Name + Punktzahl zurück
+        
+        Args:
+            players (List of Obj): Liste der Spieler-Instanzen
+
+        Returns:
+            siegername: String\n
+            siegerpunkte: Int
+        """
+        maxPoints = -1
+        maxPlayerName = ""
+        mehrereWinner = []
+        unentschieden = False
+        for i in range(0, self.pCount):
+
+            if maxPoints < self.players[i].getPoints():
+                maxPoints = self.players[i].getPoints()
+                maxPlayerName = self.players[i].spielerName
+            elif (
+                maxPoints == self.players[i].getPoints()
+                and self.players[i].spielerName not in mehrereWinner
+            ):
+                mehrereWinner.append(self.players[i].spielerName)
+                unentschieden = True
+
+        siegerpunkte = maxPoints
+        siegername = maxPlayerName
+
+        return (
+            siegername if not unentschieden else mehrereWinner,
+            siegerpunkte,
+            unentschieden,
+        )
+
+    def announceWinner(self):
+        winSiegername, winSiegerpunkte, unentschieden = self.checkWinner()
+        if not unentschieden:
+            print(
+                f"!*~~ |Sieger ist: {winSiegername} mit {winSiegerpunkte} Punkten!| ~~*!"
+            )
+            g.msgbox(
+                msg=f"Sieger ist: {winSiegername} mit {winSiegerpunkte} Punkten!",
+                title="--SPIEL VORBEI--",
+                ok_button="Beenden",
+            )
+        else:
+            sieger = "".join(f"{x}, " for x in winSiegername)
+            print(
+                f"!*~~ |Die Sieger sind: {sieger}mit {winSiegerpunkte} Punkten!| ~~*!"
+            )
+            g.msgbox(
+                msg=f"Die Sieger sind: {sieger} mit {winSiegerpunkte} Punkten!",
+                title="--SPIEL VORBEI--",
+                ok_button="Beenden",
+            )
 
     def helpCheck(self, playerInp):
         player = playerInp
@@ -140,7 +206,7 @@ class Game(Player):
                         if nachfragenAus or g.ccbox(
                             msg=f"Bei Abbruch/keiner Auswahl werden keine Zahlen behalten!\nAktuelle Zahlen: {self.zahlenStr(zahlen)}"
                         ):
-                            behalten=[]
+                            behalten = []
                             break  # Spieler ist mit Auswahl zufrieden
                         else:
                             pass  # Spieler will Auswahl ändern
@@ -335,7 +401,7 @@ class Game(Player):
 
         return classDict
 
-    def auswahl(self, playerInp, zahlenInp, inpDict):
+    def auswahl(self, playerInp, zahlenInp, inpDict, ausStreichen=False):
         """Beschreibung:\n
         In dieser Methode wird die Auswahl des Spielers gesteuert und seine
         Auswahl wird in sein Logbuch eingetragen.
@@ -371,7 +437,7 @@ class Game(Player):
         alleSpecialDK = []
         alleDoppelkniffel = []
 
-        if player.classesUsed[1][5][0] >= 1:
+        if player.classesUsed[1][5][0] >= 1 and classDict["K"] == 1:
             istDoppelkniffel = True
 
         # ---------- Auswahl vorbereiten ----------
@@ -465,6 +531,8 @@ class Game(Player):
         if antwort == "Streichen":
             antwortIndexNoDK[-1] = 1
             print("Streichen ausgewählt")
+            if ausStreichen:
+                self.streichen(playerInp, zahlenInp, inpDict)
 
         # ---------- Ergebnis Liste erstellen ----------
         for i in range(0, len(antwortIndexNoDK)):
@@ -486,7 +554,66 @@ class Game(Player):
 
         return ergebnis
 
-    def berechnePunkte(self, playerInp, zahlenInp, auswahlInp):
+    def streichen(self, playerInp, zahlenInp, inpDict):
+        auswahlAugen = []
+        auswahlSpe = []
+        speClasses = [
+            "3er Pasch",
+            "4er Pasch",
+            "Full House",
+            "Kleine Straße",
+            "Große Straße",
+            "Kniffel",
+            "Chance",
+        ]
+        alleKlassen = [1, 2, 3, 4, 5, 6] + speClasses
+        player = playerInp
+
+        # Augenzahlen für Auswahl aussuchen
+        for i in range(0, 6):
+            if player.classesUsed[0][i] == [0]:
+                auswahlAugen.append(i + 1)
+        # Spezialwürfe für Auswahl aussuchen
+        for i in range(0, len(self.classes) - 1):
+            if player.classesUsed[1][i] == [0]:
+                auswahlSpe.append(self.classes[i])
+        # Gesamtauswahl für die Auswahlfrage
+        gesamtAuswahl = auswahlAugen + auswahlSpe + ["Zurück"]
+        print(gesamtAuswahl, alleKlassen)
+        # Schleife über die Auswahl damit not None als Antwort kommt
+        while True:
+            antwort = g.choicebox(
+                msg=f"Treffe deine Entscheidung für diesen Spielzug\n Du musst ein Feld streichen.",
+                choices=gesamtAuswahl,
+                title="Wähle Feld zum streichen aus",
+                preselect=0,
+            )
+            if antwort == None:
+                print("Keine gültige Eingabe")
+                g.msgbox(
+                    msg="Keine gültige Eingabe", title="Fehler", ok_button="Nochmal"
+                )
+            else:
+                break
+        print(antwort, type(antwort))
+        # Spieler möchte zur Auswahl zurück
+        if antwort == gesamtAuswahl[-1]:
+            # True damit Methode versteht dass Auswahl von streichen aus gewählt wurde
+            self.auswahl(player, zahlenInp, inpDict, True)
+        else:
+            # Index suchen welche Auswahl getroffen wurde
+            for i in range(0, len(alleKlassen)):
+
+                if str(alleKlassen[i]) == antwort:
+
+                    if alleKlassen[i] in auswahlAugen:
+                        print(f"Es wurde die Augenzahl {alleKlassen[i]} gestrichen")
+                        player.classesUsed[0][i][0] = 1
+                    elif alleKlassen[i] in auswahlSpe:
+                        print(f"Es wurde das Feld: {alleKlassen[i]} gestrichen")
+                        player.classesUsed[1][i - 6][0] = 1
+
+    def berechnePunkte(self, playerInp, zahlenInp, auswahlInp, inpDict):
         """Beschreibung:\n
         Diese Methode berechnet die Punktzahl und achtet dabei auf verschiedene
         Dinge wie z.B. ob doppelter/n-ter Kniffel gewürfelt wurde oder ob
@@ -496,6 +623,7 @@ class Game(Player):
             playerInp (Object Instance): der aktuelle Spieler
             zahlenInp (List of ints): die gewürfelten Zahlen
             auswahlInp (List of 2 Lists of ints): Liste mit Liste[0]=normale Auswahl, Liste[1]=doppelter/n-ter Kniffel
+            inpDict (Dict): benötigt um die Auswahl erneut auszuführen beim streichen
         """
         print("\n-------- ERGEBNIS --------")
         wuerfel = zahlenInp  # Ersetzen mit zahlenInp
@@ -562,6 +690,7 @@ class Game(Player):
 
         elif streichWahl:
             print("Es wird ein Feld gestrichen")
+            self.streichen(playerInp, zahlenInp, inpDict)
             # Streichwahl Methode aufrufen
 
         else:
@@ -607,7 +736,7 @@ class Game(Player):
 
         return punktzahl
 
-    def spielzugEnde(self, currSpieler, nextSpieler, punkteAuswertungInp):
+    def spielzugEnde(self, currSpieler, nextSpieler, punkteAuswertungInp, lastRound):
         player = currSpieler
         nPlayer = nextSpieler
         punktzahl = punkteAuswertungInp
@@ -622,48 +751,52 @@ class Game(Player):
                 choicesList.append("Nachfragen aktivieren (empfohlen)")
             if player.helper[1] == 1:
                 choicesList.append("Nachfragen deaktivieren")
-                
-            ausgabe = g.choicebox(
-                msg=f"Diese Runde hat {player.spielerName} {punktzahl} Punkte gebracht!\n"+
-                f"Aktuelle Gesamtpuntzahl von {player.spielerName}: {player.gesamtPunkte}\n\n"+
-                f"Der Spielzug von {player.spielerName} ist damit beendet\n"+
-                f"Als nächstes ist {nPlayer.spielerName} dran!",
-                title=f"Ende des Spielzugs - Gesamtpunkte von {player.spielerName}: {player.gesamtPunkte}",
-                choices=choicesList
-            )
-
-            # Auswahl der Spielende verarbeiten
-            if ausgabe == "Weiterspielen":
-                print(f"Nächste Runde startet, {nPlayer.spielerName} mach dich bereit!")
-                break
-            # Spiel wird beendet
-            elif ausgabe == "Spiel beenden":
-                print(f"{player.spielerName} möchte das Spiel vorzeitig beenden..")
-                endgame = g.ccbox(msg="Wirklich beenden?", choices=["Ja", "Nein"])
-                if endgame:
-                    print("Das Spiel wird beendet :(")
-                    print(
-                        "\n##########################################################"
-                    )
-                    sys.exit()
-            # Hilfe (Anleitung) wird de/aktiviert
-            elif ausgabe == "Anleitung aktivieren":
-                player.helper[0] = 1
-            elif ausgabe == "Anleitung deaktivieren":
-                player.helper[0] = 0
-            # Nachfragen wird de/aktiviert
-            elif ausgabe == "Nachfragen aktivieren (empfohlen)":
-                player.helper[1] = 1
-                g.msgbox("Nachfragen wieder aktiviert", title="Nachfragen")
-            elif ausgabe == "Nachfragen deaktivieren":
-                player.helper[1] = 0
-                g.msgbox(
-                    "Nachfragen deaktiviert (kann zu falschen Angaben beim auswählen führen)",
-                    title="Nachfragen",
+            if not lastRound:
+                ausgabe = g.choicebox(
+                    msg=f"Diese Runde hat {player.spielerName} {punktzahl} Punkte gebracht!\n"
+                    + f"Aktuelle Gesamtpuntzahl von {player.spielerName}: {player.gesamtPunkte}\n\n"
+                    + f"Der Spielzug von {player.spielerName} ist damit beendet\n"
+                    + f"Als nächstes ist {nPlayer.spielerName} dran!",
+                    title=f"Ende des Spielzugs - Gesamtpunkte von {player.spielerName}: {player.gesamtPunkte}",
+                    choices=choicesList,
                 )
 
-        print("********************************************************")
-        print("********************************************************")
+                # Auswahl der Spielende verarbeiten
+                if ausgabe == "Weiterspielen":
+                    print(
+                        f"Nächste Runde startet, {nPlayer.spielerName} mach dich bereit!"
+                    )
+                    break
+                # Spiel wird beendet
+                elif ausgabe == "Spiel beenden":
+                    print(f"{player.spielerName} möchte das Spiel vorzeitig beenden..")
+                    endgame = g.ccbox(msg="Wirklich beenden?", choices=["Ja", "Nein"])
+                    if endgame:
+                        print("Das Spiel wird beendet :(")
+                        print(
+                            "\n##########################################################"
+                        )
+                        sys.exit()
+                # Hilfe (Anleitung) wird de/aktiviert
+                elif ausgabe == "Anleitung aktivieren":
+                    player.helper[0] = 1
+                elif ausgabe == "Anleitung deaktivieren":
+                    player.helper[0] = 0
+                # Nachfragen wird de/aktiviert
+                elif ausgabe == "Nachfragen aktivieren (empfohlen)":
+                    player.helper[1] = 1
+                    g.msgbox("Nachfragen wieder aktiviert", title="Nachfragen")
+                elif ausgabe == "Nachfragen deaktivieren":
+                    player.helper[1] = 0
+                    g.msgbox(
+                        "Nachfragen deaktiviert (kann zu falschen Angaben beim auswählen führen)",
+                        title="Nachfragen",
+                    )
+            else:
+                self.announceWinner()
+                break
+        print("***********************************************************")
+        print("***********************************************************")
 
     def run(self):
         """
@@ -674,7 +807,7 @@ class Game(Player):
         self.running = True
 
         while self.running:  # Schleife die Spiel bis Ende laufen lässt
-            for j in range(0, 2):  # Die Maximal 13 möglichen Spielzüge
+            for j in range(0, self.spielRunden):  # Die Maximal 13 möglichen Spielzüge
                 g.msgbox(
                     msg=f"RUNDE {j+1}",
                     title="MITTEILUNG",
@@ -696,7 +829,7 @@ class Game(Player):
 
                     # Punktzahl ausrechnen
                     bpAuswertung = self.berechnePunkte(
-                        self.players[i], wuerfelZahlen, awErgebnis
+                        self.players[i], wuerfelZahlen, awErgebnis, waDict
                     )
 
                     # Spielzug Ende (optimalerweise letzter Befehl)
@@ -706,6 +839,9 @@ class Game(Player):
                         if i < (self.pCount - 1) and self.pCount > 1
                         else self.players[0],
                         bpAuswertung,
+                        False
+                        if j < self.spielRunden - 1 or i < self.pCount - 1
+                        else True,
                     )
 
             self.running = False
