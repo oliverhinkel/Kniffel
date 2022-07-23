@@ -21,7 +21,7 @@ class Game(Player):
         self.running = False
         self.players = impPlayers
         self.pCount = playerCount
-        self.spielRunden = 1  # Normalfall = 13 Runden, da jeden Spielzug eins von 13 Feldern ausgefüllt wird
+        self.spielRunden = 13  # Normalfall = 13 Runden, da jeden Spielzug eins von 13 Feldern ausgefüllt wird
         self.classes = (
             "3er Pasch",
             "4er Pasch",
@@ -58,7 +58,7 @@ class Game(Player):
             siegername: String\n
             siegerpunkte: Int
         """
-        maxPoints = self.players[0].getPoints()
+        maxPoints = -1
         maxPlayerName = ""
         mehrereWinner = []
         unentschieden = False
@@ -401,7 +401,7 @@ class Game(Player):
 
         return classDict
 
-    def auswahl(self, playerInp, zahlenInp, inpDict):
+    def auswahl(self, playerInp, zahlenInp, inpDict, ausStreichen=False):
         """Beschreibung:\n
         In dieser Methode wird die Auswahl des Spielers gesteuert und seine
         Auswahl wird in sein Logbuch eingetragen.
@@ -437,7 +437,7 @@ class Game(Player):
         alleSpecialDK = []
         alleDoppelkniffel = []
 
-        if player.classesUsed[1][5][0] >= 1:
+        if player.classesUsed[1][5][0] >= 1 and classDict["K"] == 1:
             istDoppelkniffel = True
 
         # ---------- Auswahl vorbereiten ----------
@@ -531,6 +531,8 @@ class Game(Player):
         if antwort == "Streichen":
             antwortIndexNoDK[-1] = 1
             print("Streichen ausgewählt")
+            if ausStreichen:
+                self.streichen(playerInp, zahlenInp, inpDict)
 
         # ---------- Ergebnis Liste erstellen ----------
         for i in range(0, len(antwortIndexNoDK)):
@@ -552,7 +554,66 @@ class Game(Player):
 
         return ergebnis
 
-    def berechnePunkte(self, playerInp, zahlenInp, auswahlInp):
+    def streichen(self, playerInp, zahlenInp, inpDict):
+        auswahlAugen = []
+        auswahlSpe = []
+        speClasses = [
+            "3er Pasch",
+            "4er Pasch",
+            "Full House",
+            "Kleine Straße",
+            "Große Straße",
+            "Kniffel",
+            "Chance",
+        ]
+        alleKlassen = [1, 2, 3, 4, 5, 6] + speClasses
+        player = playerInp
+
+        # Augenzahlen für Auswahl aussuchen
+        for i in range(0, 6):
+            if player.classesUsed[0][i] == [0]:
+                auswahlAugen.append(i + 1)
+        # Spezialwürfe für Auswahl aussuchen
+        for i in range(0, len(self.classes) - 1):
+            if player.classesUsed[1][i] == [0]:
+                auswahlSpe.append(self.classes[i])
+        # Gesamtauswahl für die Auswahlfrage
+        gesamtAuswahl = auswahlAugen + auswahlSpe + ["Zurück"]
+        print(gesamtAuswahl, alleKlassen)
+        # Schleife über die Auswahl damit not None als Antwort kommt
+        while True:
+            antwort = g.choicebox(
+                msg=f"Treffe deine Entscheidung für diesen Spielzug\n Du musst ein Feld streichen.",
+                choices=gesamtAuswahl,
+                title="Wähle Feld zum streichen aus",
+                preselect=0,
+            )
+            if antwort == None:
+                print("Keine gültige Eingabe")
+                g.msgbox(
+                    msg="Keine gültige Eingabe", title="Fehler", ok_button="Nochmal"
+                )
+            else:
+                break
+        print(antwort, type(antwort))
+        # Spieler möchte zur Auswahl zurück
+        if antwort == gesamtAuswahl[-1]:
+            # True damit Methode versteht dass Auswahl von streichen aus gewählt wurde
+            self.auswahl(player, zahlenInp, inpDict, True)
+        else:
+            # Index suchen welche Auswahl getroffen wurde
+            for i in range(0, len(alleKlassen)):
+
+                if str(alleKlassen[i]) == antwort:
+
+                    if alleKlassen[i] in auswahlAugen:
+                        print(f"Es wurde die Augenzahl {alleKlassen[i]} gestrichen")
+                        player.classesUsed[0][i][0] = 1
+                    elif alleKlassen[i] in auswahlSpe:
+                        print(f"Es wurde das Feld: {alleKlassen[i]} gestrichen")
+                        player.classesUsed[1][i - 6][0] = 1
+
+    def berechnePunkte(self, playerInp, zahlenInp, auswahlInp, inpDict):
         """Beschreibung:\n
         Diese Methode berechnet die Punktzahl und achtet dabei auf verschiedene
         Dinge wie z.B. ob doppelter/n-ter Kniffel gewürfelt wurde oder ob
@@ -562,6 +623,7 @@ class Game(Player):
             playerInp (Object Instance): der aktuelle Spieler
             zahlenInp (List of ints): die gewürfelten Zahlen
             auswahlInp (List of 2 Lists of ints): Liste mit Liste[0]=normale Auswahl, Liste[1]=doppelter/n-ter Kniffel
+            inpDict (Dict): benötigt um die Auswahl erneut auszuführen beim streichen
         """
         print("\n-------- ERGEBNIS --------")
         wuerfel = zahlenInp  # Ersetzen mit zahlenInp
@@ -628,6 +690,7 @@ class Game(Player):
 
         elif streichWahl:
             print("Es wird ein Feld gestrichen")
+            self.streichen(playerInp, zahlenInp, inpDict)
             # Streichwahl Methode aufrufen
 
         else:
@@ -744,7 +807,7 @@ class Game(Player):
         self.running = True
 
         while self.running:  # Schleife die Spiel bis Ende laufen lässt
-            for j in range(0, 1):  # Die Maximal 13 möglichen Spielzüge
+            for j in range(0, self.spielRunden):  # Die Maximal 13 möglichen Spielzüge
                 g.msgbox(
                     msg=f"RUNDE {j+1}",
                     title="MITTEILUNG",
@@ -766,7 +829,7 @@ class Game(Player):
 
                     # Punktzahl ausrechnen
                     bpAuswertung = self.berechnePunkte(
-                        self.players[i], wuerfelZahlen, awErgebnis
+                        self.players[i], wuerfelZahlen, awErgebnis, waDict
                     )
 
                     # Spielzug Ende (optimalerweise letzter Befehl)
