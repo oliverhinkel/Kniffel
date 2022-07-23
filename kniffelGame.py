@@ -39,6 +39,11 @@ class Game(Player):
         else:
             pass
 
+    def helpCheck(self, playerInp):
+        player = playerInp
+        if player.helper[0] == 1:
+            self.showHelp()
+
     def zahlenStr(self, inp):
         # Würfelzahlen aus Array als String mit Leerzeichen zurückgeben
         strZahlen = ""
@@ -65,20 +70,7 @@ class Game(Player):
                 strZahlen += "[" + str(inp[i]) + "]"
         return strZahlen
 
-    def showHelp(self):
-        if g.boolbox(
-            msg="Möchtest du die Regeln vor deinem Zug anschauen?",
-            title="Regelwerk",
-            choices=["Ja", "Nein"],
-        ):
-            file = open(helpDir, "r", encoding="utf-8")
-            helpText = file.readlines()
-            file.close()
-            g.codebox("SPIELREGELN VON KNIFFEL", "Regelwerk", helpText)
-        else:
-            pass
-
-    def wuerfelZug(self, pName):
+    def wuerfelZug(self, player):
 
         """Beschreibung:\n
         Der Würfelzug eines Spielers, in dem die Würfel gewürfelt werden und die Auswahl der Würfel (nicht Punktzahl)
@@ -89,15 +81,15 @@ class Game(Player):
         """
         spielzugEnde = False
         spielzugZahlen = []
+        pName = player.spielerName
+        nachfragenAus = True if player.helper[1] == 0 else False
         print(f"\n--------| SPIELER*IN: {pName.upper()} |--------")
-
         # For Schleife über die 3 Würfelrunden die man hat in einem Spielzug
         for j in range(0, 3):
             print(f"\n----- Würfel {j+1} -----")
 
             # If schaut ob erstes Würfeln dann immer 5 Würfel, oder ob erneutes Würfeln dann sind es (5 - Anzahl gespeicherter Würfel)
             if j == 0:
-                self.showHelp()
                 g.msgbox(msg=f"{pName} ist am Zug", ok_button="Würfeln")
                 zahlen = self.wuerfeln()  # Zahlen würfeln (immer 5 in erster Runde)
             else:
@@ -136,22 +128,25 @@ class Game(Player):
                         behalten = [int(x) for x in behalten]
 
                         # Fragebox, ob korrekte Auswahl getroffen wurde, bei ja -> aus Auswahlfrage, bei nein -> in Schleife bleiben
-                        if g.ccbox(msg=f"Auswahl korrekt? {self.zahlenStr(behalten)}"):
+                        if nachfragenAus or g.ccbox(
+                            msg=f"Auswahl korrekt? {self.zahlenStr(behalten)}"
+                        ):
                             break  # Spieler ist mit Auswahl zufrieden
                         else:
                             pass  # Spieler will Auswahl ändern
                     # Bei Cancel in Auswahlmenü
                     elif behalten == None:
 
-                        if g.ccbox(
-                            msg=f"Bei Abbruch/keiner Auswahl werden alle behalten: {self.zahlenStr(zahlen)}"
+                        if nachfragenAus or g.ccbox(
+                            msg=f"Bei Abbruch/keiner Auswahl werden keine Zahlen behalten!\nAktuelle Zahlen: {self.zahlenStr(zahlen)}"
                         ):
+                            behalten=[]
                             break  # Spieler ist mit Auswahl zufrieden
                         else:
                             pass  # Spieler will Auswahl ändern
                     # Bei Auswahl von allen Zahlen
                     else:
-                        if g.ccbox(
+                        if nachfragenAus or g.ccbox(
                             msg=f"Möchtest du alle behalten?: {self.zahlenStr(zahlen)}"
                         ):
                             break  # Spieler ist mit Auswahl zufrieden
@@ -159,7 +154,7 @@ class Game(Player):
                             pass  # Spieler will Auswahl ändern
 
             # Bedingung ob entweder alles behalten wurde oder schon dreimal gewürfelt wurde
-            if behalten == None or j == 2 or len(behalten) == len(zahlen):
+            if j == 2 or len(behalten) == len(zahlen):
                 spielzugEnde = True
                 spielzugZahlen = zahlen
             else:
@@ -610,26 +605,39 @@ class Game(Player):
         player.gesamtPunkte = player.getPoints()
         print("Gesamtpuntzahl:", player.gesamtPunkte)
 
-        g.msgbox(
-            msg=f"Diese Runde hat {player.spielerName} {punktzahl} Punkte gebracht!\nAktuelle Gesamtpuntzahl: {player.gesamtPunkte}",
-            title=f"Punktzahl {player.spielerName}: {player.gesamtPunkte}",
-            ok_button="Weiter",
-        )
+        return punktzahl
 
-    def spielzugEnde(self, currSpieler, nextSpieler):
+    def spielzugEnde(self, currSpieler, nextSpieler, punkteAuswertungInp):
         player = currSpieler
         nPlayer = nextSpieler
+        punktzahl = punkteAuswertungInp
         print(f"*****|Spielzug von {player.spielerName} beendet|*****".upper())
         while True:
-            ausgabe = g.ccbox(
-                msg=f"Spielzug von {player.spielerName} beendet\nAls nächstes ist {nPlayer.spielerName} dran!",
-                title="Ende des Spielzugs",
-                choices=["Weiterspielen", "Spiel beenden"],
+            choicesList = ["Weiterspielen", "Spiel beenden"]
+            if player.helper[0] == 0:
+                choicesList.append("Anleitung aktivieren")
+            if player.helper[0] == 1:
+                choicesList.append("Anleitung deaktivieren")
+            if player.helper[1] == 0:
+                choicesList.append("Nachfragen aktivieren (empfohlen)")
+            if player.helper[1] == 1:
+                choicesList.append("Nachfragen deaktivieren")
+                
+            ausgabe = g.choicebox(
+                msg=f"Diese Runde hat {player.spielerName} {punktzahl} Punkte gebracht!\n"+
+                f"Aktuelle Gesamtpuntzahl von {player.spielerName}: {player.gesamtPunkte}\n\n"+
+                f"Der Spielzug von {player.spielerName} ist damit beendet\n"+
+                f"Als nächstes ist {nPlayer.spielerName} dran!",
+                title=f"Ende des Spielzugs - Gesamtpunkte von {player.spielerName}: {player.gesamtPunkte}",
+                choices=choicesList
             )
-            if ausgabe:
+
+            # Auswahl der Spielende verarbeiten
+            if ausgabe == "Weiterspielen":
                 print(f"Nächste Runde startet, {nPlayer.spielerName} mach dich bereit!")
                 break
-            else:
+            # Spiel wird beendet
+            elif ausgabe == "Spiel beenden":
                 print(f"{player.spielerName} möchte das Spiel vorzeitig beenden..")
                 endgame = g.ccbox(msg="Wirklich beenden?", choices=["Ja", "Nein"])
                 if endgame:
@@ -638,6 +646,22 @@ class Game(Player):
                         "\n##########################################################"
                     )
                     sys.exit()
+            # Hilfe (Anleitung) wird de/aktiviert
+            elif ausgabe == "Anleitung aktivieren":
+                player.helper[0] = 1
+            elif ausgabe == "Anleitung deaktivieren":
+                player.helper[0] = 0
+            # Nachfragen wird de/aktiviert
+            elif ausgabe == "Nachfragen aktivieren (empfohlen)":
+                player.helper[1] = 1
+                g.msgbox("Nachfragen wieder aktiviert", title="Nachfragen")
+            elif ausgabe == "Nachfragen deaktivieren":
+                player.helper[1] = 0
+                g.msgbox(
+                    "Nachfragen deaktiviert (kann zu falschen Angaben beim auswählen führen)",
+                    title="Nachfragen",
+                )
+
         print("********************************************************")
         print("********************************************************")
 
@@ -659,8 +683,10 @@ class Game(Player):
 
                 for i in range(0, self.pCount):  # Ein Spielzug für alle Spieler
 
+                    # Hilfe vorschlagen (deaktivierbar)
+                    self.helpCheck(self.players[i])
                     # Spielzug für Spieler i durchführen und seine Würfelzahlen speichern
-                    wuerfelZahlen = self.wuerfelZug(self.players[i].spielerName)
+                    wuerfelZahlen = self.wuerfelZug(self.players[i])
 
                     # Würfelzahlen + mögliche Würfelarten abspeichern
                     waDict = self.wuerfelArt(zahlenInp=wuerfelZahlen)
@@ -669,7 +695,9 @@ class Game(Player):
                     awErgebnis = self.auswahl(self.players[i], wuerfelZahlen, waDict)
 
                     # Punktzahl ausrechnen
-                    self.berechnePunkte(self.players[i], wuerfelZahlen, awErgebnis)
+                    bpAuswertung = self.berechnePunkte(
+                        self.players[i], wuerfelZahlen, awErgebnis
+                    )
 
                     # Spielzug Ende (optimalerweise letzter Befehl)
                     self.spielzugEnde(
@@ -677,6 +705,7 @@ class Game(Player):
                         self.players[i + 1]
                         if i < (self.pCount - 1) and self.pCount > 1
                         else self.players[0],
+                        bpAuswertung,
                     )
 
             self.running = False
