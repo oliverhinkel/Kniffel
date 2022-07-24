@@ -201,5 +201,5 @@ Spielende
 
 Das Spiel endet, sobald das letzte Kästchen
 beim letzten Spieler ausgefüllt ist. Nun werden
-alle Punkte (Boni nicht vergessen) zusammengerechnet. Der Spieler mit den meisten Punkten
-ist der Sieger.
+alle Punkte (Boni nicht vergessen) zusammengerechnet.
+Der Spieler mit den meisten Punkten ist der Sieger.
