@@ -9,8 +9,10 @@ Imports, that need to be installed beforehand through pip/conda:
 ## How to run the game
 Of course, download the Kniffel.zip from this github page first.
 
-To start the game, make sure you've installed the required modules. Then you only need to start the playKniffel.py file through the console
+To start the game, make sure you've installed the required modules. Then you only need to start the ***playKniffel.py*** file through the console
 with a command similar to "python playKniffel.py" and then the game should start.
+
+***If the game seems to stopped working without printing an error message: try to click into the console and press enter. The game didn't crash, the console just waits for some reason but this DOESN'T affect anything inside the game and does not happen often (which is why I have trouble finding the problem)***
 
 ## Game setup
 You'll start with a first few steps inside the console, typing in the amount of players first, the names of all those second.
