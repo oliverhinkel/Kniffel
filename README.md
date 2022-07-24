@@ -22,8 +22,6 @@ Kniffel® is the name of the trademark game by Schmidt Spiele
 
 ***Project start: 21.07.2022*** 
 
-Currently unfinished (ca. 95% done)
-
-***Project end: N/A*** 
+***Project end: 24.07.2022*** 
 
 This code was made 100% by myself, only help being the documentations of the used modules.
