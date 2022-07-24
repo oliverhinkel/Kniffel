@@ -1,9 +1,6 @@
-import random as rn
-from time import sleep
 from kniffelPlayer import Player
 from kniffelGame import Game
 from click import confirm
-import easygui as g
 
 
 # Spielerinstanzen erstellen

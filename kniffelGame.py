@@ -2,7 +2,6 @@ import random
 import easygui as g
 import os
 from kniffelPlayer import Player
-from time import sleep
 import sys
 
 dirname = os.path.abspath("")
@@ -389,15 +388,7 @@ class Game(Player):
             classDict["F"] = 1
 
         # Chance ----------------------------------
-        if (
-            classDict["3P"] == 0
-            and classDict["4P"] == 0
-            and classDict["F"] == 0
-            and classDict["KS"] == 0
-            and classDict["GS"] == 0
-            and classDict["K"] == 0
-        ):
-            classDict["C"] = 1
+        classDict["C"] = 1
 
         return classDict
 
@@ -481,75 +472,79 @@ class Game(Player):
         gesamtauswahl = (
             auswahlAugen + auswahlSpecials + auswahlDoppelKniffel + ["Streichen"]
         )
-
-        while True:
-            antwort = g.choicebox(
-                msg=f"Treffe deine Entscheidung für diesen Spielzug\n Deine Würfelzahlen sind: {self.zahlenStr(wuerfel)}",
-                choices=gesamtauswahl,
-                title="Auswahl",
-                preselect=0,
-            )
-            if antwort == None:
-                print("Keine gültige Eingabe")
-                g.msgbox(
-                    msg="Keine gültige Eingabe", title="Fehler", ok_button="Nochmal"
+        if len(gesamtauswahl) > 1:
+            while True:
+                antwort = g.choicebox(
+                    msg=f"Treffe deine Entscheidung für diesen Spielzug\n Deine Würfelzahlen sind: {self.zahlenStr(wuerfel)}",
+                    choices=gesamtauswahl,
+                    title="Auswahl",
+                    preselect=0,
                 )
-            else:
-                break
+                if antwort == None:
+                    print("Keine gültige Eingabe")
+                    g.msgbox(
+                        msg="Keine gültige Eingabe", title="Fehler", ok_button="Nochmal"
+                    )
+                else:
+                    break
 
-        # ---------- Auswahl verarbeiten ----------
-        # Entweder Index des Spezialwurf nehmen oder Antwort ist Augenzahl oder Antwort ist Doppelkniffel
-        antwortIndexSpecials = None
-        antwortIndexAugen = None
-        antwortIndexKniffel = None
+            # ---------- Auswahl verarbeiten ----------
+            # Entweder Index des Spezialwurf nehmen oder Antwort ist Augenzahl oder Antwort ist Doppelkniffel
+            antwortIndexSpecials = None
+            antwortIndexAugen = None
 
-        # Indexsuche von Augenzahl als Antwort
-        for i in range(0, 6):
-            if antwort == str(i + 1):
-                antwortIndexAugen = i
-                print(f"Augenzahl {i+1} ausgewählt")
+            # Indexsuche von Augenzahl als Antwort
+            for i in range(0, 6):
+                if antwort == str(i + 1):
+                    antwortIndexAugen = i
+                    print(f"Augenzahl {i+1} ausgewählt")
 
-        # Indexsuche von Spezialwürfen als Antwort
-        if antwortIndexAugen == None:
-            for i in range(0, len(self.classes)):
+            # Indexsuche von Spezialwürfen als Antwort
+            if antwortIndexAugen == None:
+                for i in range(0, len(self.classes)):
 
-                if self.classes[i] == antwort and antwort != "Streichen":
-                    antwortIndexSpecials = i + 6
-                    print(f"{self.classes[i]} ausgewählt")
+                    if self.classes[i] == antwort and antwort != "Streichen":
+                        antwortIndexSpecials = i + 6
+                        print(f"{self.classes[i]} ausgewählt")
 
-        # Indexsuche wenn Antwort ein Doppelkniffel ist
-        alleDoppelkniffel = alleAugenDK + alleSpecialDK
-        if antwortIndexAugen == None:
+            # Indexsuche wenn Antwort ein Doppelkniffel ist
+            alleDoppelkniffel = alleAugenDK + alleSpecialDK
+            if antwortIndexAugen == None:
 
-            for i in range(0, len(alleDoppelkniffel)):
+                for i in range(0, len(alleDoppelkniffel)):
 
-                if antwort == alleDoppelkniffel[i]:
-                    doppelkniffel[i] = 1
-                    print("Doppelkniffel ausgewählt")
+                    if antwort == alleDoppelkniffel[i]:
+                        doppelkniffel[i] = 1
+                        print("Doppelkniffel ausgewählt")
 
-        # Streichen als Antwort
-        if antwort == "Streichen":
-            antwortIndexNoDK[-1] = 1
-            print("Streichen ausgewählt")
-            if ausStreichen:
-                self.streichen(playerInp, zahlenInp, inpDict)
+            # Streichen als Antwort
+            if antwort == "Streichen":
+                antwortIndexNoDK[-1] = 1
+                print("Streichen ausgewählt")
+                if ausStreichen:
+                    self.streichen(playerInp, zahlenInp, inpDict)
 
-        # ---------- Ergebnis Liste erstellen ----------
-        for i in range(0, len(antwortIndexNoDK)):
-            # If checkt ob obere Punktzahl betroffen (1-6)
-            if i < 6:
-                # If checkt ob i == Auge
-                if i == antwortIndexAugen:
-                    antwortIndexNoDK[i] = 1
-                    player.classesUsed[0][i][0] = 1
+            # ---------- Ergebnis Liste erstellen ----------
+            for i in range(0, len(antwortIndexNoDK)):
+                # If checkt ob obere Punktzahl betroffen (1-6)
+                if i < 6:
+                    # If checkt ob i == Auge
+                    if i == antwortIndexAugen:
+                        antwortIndexNoDK[i] = 1
+                        player.classesUsed[0][i][0] = 1
 
-            elif i < 13:
-                if i == antwortIndexSpecials:
-                    antwortIndexNoDK[i] = 1
-                    player.classesUsed[1][i - 6][0] = 1
+                elif i < 13:
+                    if i == antwortIndexSpecials:
+                        antwortIndexNoDK[i] = 1
+                        player.classesUsed[1][i - 6][0] = 1
 
-        # print(ergebnis) # ---- INFO PRINT
-        # print(player.classesUsed)
+        else:
+            g.msgbox("Keine Auswahl übrig, bitte Streichen")
+            print(
+                f"Hängt im Else von --keine auswahl übrig-- len(gesamtauswahl)={len(gesamtauswahl)}"
+            )
+            self.streichen(player, zahlenInp, inpDict)
+
         ergebnis = [antwortIndexNoDK, doppelkniffel]
 
         return ergebnis
@@ -579,39 +574,41 @@ class Game(Player):
                 auswahlSpe.append(self.classes[i])
         # Gesamtauswahl für die Auswahlfrage
         gesamtAuswahl = auswahlAugen + auswahlSpe + ["Zurück"]
-        print(gesamtAuswahl, alleKlassen)
         # Schleife über die Auswahl damit not None als Antwort kommt
-        while True:
-            antwort = g.choicebox(
-                msg=f"Treffe deine Entscheidung für diesen Spielzug\n Du musst ein Feld streichen.",
-                choices=gesamtAuswahl,
-                title="Wähle Feld zum streichen aus",
-                preselect=0,
-            )
-            if antwort == None:
-                print("Keine gültige Eingabe")
-                g.msgbox(
-                    msg="Keine gültige Eingabe", title="Fehler", ok_button="Nochmal"
+        if len(gesamtAuswahl) > 1:
+            while True:
+                antwort = g.choicebox(
+                    msg=f"Treffe deine Entscheidung für diesen Spielzug\n Du musst ein Feld streichen.",
+                    choices=gesamtAuswahl,
+                    title="Wähle Feld zum streichen aus",
+                    preselect=0,
                 )
+                if antwort == None:
+                    print("Keine gültige Eingabe")
+                    g.msgbox(
+                        msg="Keine gültige Eingabe", title="Fehler", ok_button="Nochmal"
+                    )
+                else:
+                    break
+            # Spieler möchte zur Auswahl zurück
+            if antwort == gesamtAuswahl[-1]:
+                # True damit Methode versteht dass Auswahl von streichen aus gewählt wurde
+                self.auswahl(player, zahlenInp, inpDict, True)
             else:
-                break
-        print(antwort, type(antwort))
-        # Spieler möchte zur Auswahl zurück
-        if antwort == gesamtAuswahl[-1]:
-            # True damit Methode versteht dass Auswahl von streichen aus gewählt wurde
-            self.auswahl(player, zahlenInp, inpDict, True)
+                # Index suchen welche Auswahl getroffen wurde
+                for i in range(0, len(alleKlassen)):
+
+                    if str(alleKlassen[i]) == antwort:
+
+                        if alleKlassen[i] in auswahlAugen:
+                            print(f"Es wurde die Augenzahl {alleKlassen[i]} gestrichen")
+                            player.classesUsed[0][i][0] = 1
+                        elif alleKlassen[i] in auswahlSpe:
+                            print(f"Es wurde das Feld: {alleKlassen[i]} gestrichen")
+                            player.classesUsed[1][i - 6][0] = 1
+
         else:
-            # Index suchen welche Auswahl getroffen wurde
-            for i in range(0, len(alleKlassen)):
-
-                if str(alleKlassen[i]) == antwort:
-
-                    if alleKlassen[i] in auswahlAugen:
-                        print(f"Es wurde die Augenzahl {alleKlassen[i]} gestrichen")
-                        player.classesUsed[0][i][0] = 1
-                    elif alleKlassen[i] in auswahlSpe:
-                        print(f"Es wurde das Feld: {alleKlassen[i]} gestrichen")
-                        player.classesUsed[1][i - 6][0] = 1
+            g.msgbox("Das Spiel scheint bereits geendet zu habe!")
 
     def berechnePunkte(self, playerInp, zahlenInp, auswahlInp, inpDict):
         """Beschreibung:\n
@@ -701,10 +698,11 @@ class Game(Player):
 
                     if auswahlDKA[i] > 0:
                         # Augenzahl Häufigkeit in Würfelzahlen zählen
-                        punktzahl = wuerfel[i] * 5
+                        punktzahl = (i + 1) * 5
                         # Spieler die Punktzahl gutschreiben
                         player.addOP(punktzahl, i)
                         player.classesUsed[0][i] = 1
+
             elif dkSpezialWahl:
                 for i in range(0, len(auswahlDKSPE)):
 
@@ -730,11 +728,35 @@ class Game(Player):
                                 punktzahl = player.addGrStr()
 
         # Runden Ergebnis
-        print(f"Diese Runde hat {player.spielerName} {punktzahl} Punkte gebracht!")
         player.gesamtPunkte = player.getPoints()
+        print(f"Diese Runde hat {player.spielerName} {punktzahl} Punkte gebracht!")
         print("Gesamtpuntzahl:", player.gesamtPunkte)
 
         return punktzahl
+
+    def showScore(self, playerinp):
+        player = playerinp
+        obereListe = player.oberePunkte
+        untereListe = player.unterePunkte
+        finalerString = []
+        finalerString.append(
+            f"------| SCOREBOARD VON {player.spielerName.upper()} |------"
+        )
+        for i in range(0, len(player.oberePunkte)):
+            finalerString.append(f"Augenzahl {i+1}: {obereListe[i]}\n")
+        finalerString.append(
+            f"Bonuspunkte (wenn obere Punkte min. 63): {35 if player.bonusPunkte else 0}\n"
+        )
+
+        for i in range(0, len(self.classes) - 1):
+            finalerString.append(f"{self.classes[i]}: {untereListe[i]}\n")
+        finalerString.append(f"------| GESAMTPUNTZAHL: {player.getPoints()} |------")
+
+        g.msgbox(
+            msg="\n".join([x for x in finalerString]),
+            title=f"Scoreboard von {player.spielerName}",
+        )
+        print("\n".join([x for x in finalerString]))
 
     def spielzugEnde(self, currSpieler, nextSpieler, punkteAuswertungInp, lastRound):
         player = currSpieler
@@ -764,7 +786,7 @@ class Game(Player):
                 # Auswahl der Spielende verarbeiten
                 if ausgabe == "Weiterspielen":
                     print(
-                        f"Nächste Runde startet, {nPlayer.spielerName} mach dich bereit!"
+                        f"\n\nNächste Runde startet, {nPlayer.spielerName} mach dich bereit!"
                     )
                     break
                 # Spiel wird beendet
@@ -774,7 +796,7 @@ class Game(Player):
                     if endgame:
                         print("Das Spiel wird beendet :(")
                         print(
-                            "\n##########################################################"
+                            "\n##########################################################\n"
                         )
                         sys.exit()
                 # Hilfe (Anleitung) wird de/aktiviert
@@ -796,7 +818,7 @@ class Game(Player):
                 self.announceWinner()
                 break
         print("***********************************************************")
-        print("***********************************************************")
+        print("***********************************************************\n")
 
     def run(self):
         """
@@ -815,23 +837,20 @@ class Game(Player):
                 )
 
                 for i in range(0, self.pCount):  # Ein Spielzug für alle Spieler
-
+                    if j > 0:
+                        self.showScore(self.players[i])
                     # Hilfe vorschlagen (deaktivierbar)
                     self.helpCheck(self.players[i])
                     # Spielzug für Spieler i durchführen und seine Würfelzahlen speichern
                     wuerfelZahlen = self.wuerfelZug(self.players[i])
-
                     # Würfelzahlen + mögliche Würfelarten abspeichern
                     waDict = self.wuerfelArt(zahlenInp=wuerfelZahlen)
-
                     # Auswahl des Spielers starten
                     awErgebnis = self.auswahl(self.players[i], wuerfelZahlen, waDict)
-
                     # Punktzahl ausrechnen
                     bpAuswertung = self.berechnePunkte(
                         self.players[i], wuerfelZahlen, awErgebnis, waDict
                     )
-
                     # Spielzug Ende (optimalerweise letzter Befehl)
                     self.spielzugEnde(
                         self.players[i],
@@ -843,5 +862,7 @@ class Game(Player):
                         if j < self.spielRunden - 1 or i < self.pCount - 1
                         else True,
                     )
-
+            g.msgbox(msg="Die endgültigen Ergebnisse")
+            for k in range(0, self.pCount):
+                self.showScore(self.players[k])
             self.running = False

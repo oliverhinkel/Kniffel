@@ -24,6 +24,8 @@ class Player:
         up = sum(self.unterePunkte)
         bp = 0
 
+        if op >= 63:
+            self.bonusPunkte = True
         if self.bonusPunkte:
             bp = 35
             currPoints = op + up + bp
@@ -38,7 +40,6 @@ class Player:
         self.classesUsed[0][reihe][0] = 1
 
     # Spezial Würfel berechnen
-
     def addFullH(self):
         self.unterePunkte[2] = 25
         return 25
