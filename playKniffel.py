@@ -55,7 +55,4 @@ def initPlayers():
 
 players, pCount = initPlayers()
 NewGame = Game(players, pCount)
-print("\n\n")
-
-# print("Ergebnis des Spiels",oliver.spielzug(0,pName=oliver.spielerName))
 
