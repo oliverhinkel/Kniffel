@@ -135,7 +135,7 @@ class Game(Player):
                 strZahlen += "[" + str(inp[i]) + "]"
         return strZahlen
 
-    def wuerfelZug(self, player):
+    def wuerfelZug(self, player, runde):
 
         """Beschreibung:\n
         Der Würfelzug eines Spielers, in dem die Würfel gewürfelt werden und die Auswahl der Würfel (nicht Punktzahl)
@@ -183,7 +183,7 @@ class Game(Player):
                 while True:
                     behalten = g.multchoicebox(  # Auswahlbox bei Runde 1 und 2
                         msg=f"Deine Würfel: {self.zahlenStr(zahlen)}\nWelche Würfel sollen behaltet werden? ",
-                        title=f"--Würfelauswahl Menü: {pName}--",
+                        title=f"--Würfelauswahl Menü: {pName} || RUNDE {runde}--",
                         choices=zahlen,
                         preselect=None,
                     )
@@ -392,7 +392,9 @@ class Game(Player):
 
         return classDict
 
-    def auswahl(self, playerInp, zahlenInp, inpDict, ausStreichen=False):
+    def auswahl(
+        self, playerInp, zahlenInp, inpDict, runde, ausStreichen=False,
+    ):
         """Beschreibung:\n
         In dieser Methode wird die Auswahl des Spielers gesteuert und seine
         Auswahl wird in sein Logbuch eingetragen.
@@ -470,14 +472,18 @@ class Game(Player):
         # ---------- Auswahl ----------
         # Gesamtauswahl
         gesamtauswahl = (
-            auswahlAugen + auswahlSpecials + auswahlDoppelKniffel + ["Streichen"]
+            auswahlAugen
+            + auswahlSpecials
+            + auswahlDoppelKniffel
+            + ["Streichen"]
+            + ["-- Zeige meinen Punktestand --"]
         )
         if len(gesamtauswahl) > 1:
             while True:
                 antwort = g.choicebox(
                     msg=f"Treffe deine Entscheidung für diesen Spielzug\n Deine Würfelzahlen sind: {self.zahlenStr(wuerfel)}",
                     choices=gesamtauswahl,
-                    title="Auswahl",
+                    title=f"Auswahl der Punkte || RUNDE {runde}",
                     preselect=0,
                 )
                 if antwort == None:
@@ -485,6 +491,8 @@ class Game(Player):
                     g.msgbox(
                         msg="Keine gültige Eingabe", title="Fehler", ok_button="Nochmal"
                     )
+                elif antwort == "-- Zeige meinen Punktestand --":
+                    self.showScore(player, runde)
                 else:
                     break
 
@@ -522,7 +530,7 @@ class Game(Player):
                 antwortIndexNoDK[-1] = 1
                 print("Streichen ausgewählt")
                 if ausStreichen:
-                    self.streichen(playerInp, zahlenInp, inpDict)
+                    self.streichen(playerInp, zahlenInp, inpDict, runde)
 
             # ---------- Ergebnis Liste erstellen ----------
             for i in range(0, len(antwortIndexNoDK)):
@@ -549,7 +557,7 @@ class Game(Player):
 
         return ergebnis
 
-    def streichen(self, playerInp, zahlenInp, inpDict):
+    def streichen(self, playerInp, zahlenInp, inpDict, runde):
         auswahlAugen = []
         auswahlSpe = []
         speClasses = [
@@ -573,14 +581,16 @@ class Game(Player):
             if player.classesUsed[1][i] == [0]:
                 auswahlSpe.append(self.classes[i])
         # Gesamtauswahl für die Auswahlfrage
-        gesamtAuswahl = auswahlAugen + auswahlSpe + ["Zurück"]
+        gesamtAuswahl = (
+            auswahlAugen + auswahlSpe + ["-- Zeige meinen Punktestand --"] + ["Zurück"]
+        )
         # Schleife über die Auswahl damit not None als Antwort kommt
         if len(gesamtAuswahl) > 1:
             while True:
                 antwort = g.choicebox(
-                    msg=f"Treffe deine Entscheidung für diesen Spielzug\n Du musst ein Feld streichen.",
+                    msg=f"Treffe deine Entscheidung für diesen Spielzug {player.spielerName}\n Du musst ein Feld streichen.\nDeine Würfel: {self.zahlenStr(zahlenInp)}",
                     choices=gesamtAuswahl,
-                    title="Wähle Feld zum streichen aus",
+                    title=f"Wähle Feld zum streichen aus || RUNDE {runde}",
                     preselect=0,
                 )
                 if antwort == None:
@@ -588,12 +598,14 @@ class Game(Player):
                     g.msgbox(
                         msg="Keine gültige Eingabe", title="Fehler", ok_button="Nochmal"
                     )
+                elif antwort == "-- Zeige meinen Punktestand --":
+                    self.showScore(player, runde)
                 else:
                     break
             # Spieler möchte zur Auswahl zurück
             if antwort == gesamtAuswahl[-1]:
                 # True damit Methode versteht dass Auswahl von streichen aus gewählt wurde
-                self.auswahl(player, zahlenInp, inpDict, True)
+                self.auswahl(player, zahlenInp, inpDict, runde, True)
             else:
                 # Index suchen welche Auswahl getroffen wurde
                 for i in range(0, len(alleKlassen)):
@@ -603,14 +615,16 @@ class Game(Player):
                         if alleKlassen[i] in auswahlAugen:
                             print(f"Es wurde die Augenzahl {alleKlassen[i]} gestrichen")
                             player.classesUsed[0][i][0] = 1
+                            player.oberePunkte[i] = "-"
                         elif alleKlassen[i] in auswahlSpe:
                             print(f"Es wurde das Feld: {alleKlassen[i]} gestrichen")
                             player.classesUsed[1][i - 6][0] = 1
+                            player.unterePunkte[i - 6] = "-"
 
         else:
             g.msgbox("Das Spiel scheint bereits geendet zu habe!")
 
-    def berechnePunkte(self, playerInp, zahlenInp, auswahlInp, inpDict):
+    def berechnePunkte(self, playerInp, zahlenInp, auswahlInp, inpDict, runde):
         """Beschreibung:\n
         Diese Methode berechnet die Punktzahl und achtet dabei auf verschiedene
         Dinge wie z.B. ob doppelter/n-ter Kniffel gewürfelt wurde oder ob
@@ -687,7 +701,7 @@ class Game(Player):
 
         elif streichWahl:
             print("Es wird ein Feld gestrichen")
-            self.streichen(playerInp, zahlenInp, inpDict)
+            self.streichen(playerInp, zahlenInp, inpDict, runde)
             # Streichwahl Methode aufrufen
 
         else:
@@ -734,7 +748,7 @@ class Game(Player):
 
         return punktzahl
 
-    def showScore(self, playerinp):
+    def showScore(self, playerinp, runde):
         player = playerinp
         obereListe = player.oberePunkte
         untereListe = player.unterePunkte
@@ -754,7 +768,7 @@ class Game(Player):
 
         g.msgbox(
             msg="\n".join([x for x in finalerString]),
-            title=f"Scoreboard von {player.spielerName}",
+            title=f"Scoreboard von {player.spielerName} || RUNDE {runde}",
         )
         print("\n".join([x for x in finalerString]))
 
@@ -838,18 +852,20 @@ class Game(Player):
 
                 for i in range(0, self.pCount):  # Ein Spielzug für alle Spieler
                     if j > 0:
-                        self.showScore(self.players[i])
+                        self.showScore(self.players[i], (j + 1))
                     # Hilfe vorschlagen (deaktivierbar)
                     self.helpCheck(self.players[i])
                     # Spielzug für Spieler i durchführen und seine Würfelzahlen speichern
-                    wuerfelZahlen = self.wuerfelZug(self.players[i])
+                    wuerfelZahlen = self.wuerfelZug(self.players[i], (j + 1))
                     # Würfelzahlen + mögliche Würfelarten abspeichern
                     waDict = self.wuerfelArt(zahlenInp=wuerfelZahlen)
                     # Auswahl des Spielers starten
-                    awErgebnis = self.auswahl(self.players[i], wuerfelZahlen, waDict)
+                    awErgebnis = self.auswahl(
+                        self.players[i], wuerfelZahlen, waDict, (j + 1)
+                    )
                     # Punktzahl ausrechnen
                     bpAuswertung = self.berechnePunkte(
-                        self.players[i], wuerfelZahlen, awErgebnis, waDict
+                        self.players[i], wuerfelZahlen, awErgebnis, waDict, (j + 1)
                     )
                     # Spielzug Ende (optimalerweise letzter Befehl)
                     self.spielzugEnde(
@@ -864,5 +880,5 @@ class Game(Player):
                     )
             g.msgbox(msg="Die endgültigen Ergebnisse")
             for k in range(0, self.pCount):
-                self.showScore(self.players[k])
+                self.showScore(self.players[k], self.spielRunden)
             self.running = False

@@ -55,4 +55,3 @@ def initPlayers():
 
 players, pCount = initPlayers()
 NewGame = Game(players, pCount)
-
