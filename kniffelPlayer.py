@@ -15,13 +15,11 @@ class Player:
         self.gesamtPunkte = 0
         self.helper = [1, 1]  # helper[0]=Help Menü | helper[1]=Nachfragen
 
-    def bpChecker(self):
-        if sum(self.oberePunkte) >= 63:
-            self.bonusPunkte = True
-
     def getPoints(self):
-        op = sum(self.oberePunkte)
-        up = sum(self.unterePunkte)
+        oberePunkteInt = [x for x in self.oberePunkte if type(x) == int]
+        unterePunkteInt = [x for x in self.unterePunkte if type(x) == int]
+        op = sum(oberePunkteInt)
+        up = sum(unterePunkteInt)
         bp = 0
 
         if op >= 63:
